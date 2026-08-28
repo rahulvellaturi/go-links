@@ -2,6 +2,36 @@
 
 A small internal URL shortener I built for the take-home. You make a short name like `go/payroll`, and visiting it redirects to the full URL. You can also see all the links in one list.
 
+## Quick start
+
+Prerequisites: Node 18+ and npm.
+
+- Install dependencies
+
+```bash
+npm ci
+```
+
+- Run dev server
+
+```bash
+npm run dev
+```
+
+- Build for production
+
+```bash
+npm run build
+```
+
+- Run tests
+
+```bash
+npm test
+```
+
+CI: A GitHub Actions workflow runs build + tests on push and PRs (`.github/workflows/ci.yml`).
+
 ## Running it
 
 Needs Node 22.13 or newer (I use the SQLite built into Node, so there's nothing to install for the database).
