@@ -24,7 +24,7 @@ describe.skip('server db (requires tsx child process; skipped in CI)', () => {
   });
 
   it('creates link and increments visits (external runner)', () => {
-    const projectDbPath = path.resolve(__dirname, '../server/src/db');
+    const projectDbPath = path.resolve(__dirname, '../../server/src/db');
     const { pathToFileURL } = require('url');
     const moduleSpecifier = pathToFileURL(projectDbPath).toString();
 

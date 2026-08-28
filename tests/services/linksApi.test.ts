@@ -1,7 +1,7 @@
-import { fetchLinks, createLink } from './linksApi';
+import { fetchLinks, createLink } from '../../src/services/linksApi';
 
 describe('linksApi', () => {
-  const originalFetch = global.fetch;
+  const originalFetch = global.fetch as any;
 
   afterEach(() => {
     global.fetch = originalFetch;

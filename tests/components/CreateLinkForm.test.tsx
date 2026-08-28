@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CreateLinkForm } from './CreateLinkForm';
+import { CreateLinkForm } from '../../src/components/CreateLinkForm';
 
 describe('CreateLinkForm', () => {
   it('validates inputs and calls onCreate', async () => {

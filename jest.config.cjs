@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.jest.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setupTests.jest.ts'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true }],
   },

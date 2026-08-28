@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useLinks } from './useLinks';
+import { useLinks } from '../../src/hooks/useLinks';
 
 function TestComp() {
   const { links, loading, error, createLink } = useLinks();
@@ -16,7 +16,7 @@ function TestComp() {
 }
 
 describe('useLinks', () => {
-  const originalFetch = global.fetch;
+  const originalFetch = global.fetch as any;
 
   afterEach(() => {
     global.fetch = originalFetch;

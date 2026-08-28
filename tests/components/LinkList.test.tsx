@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { LinkList } from './LinkList';
+import { LinkList } from '../../src/components/LinkList';
 
 const links = [
   {
