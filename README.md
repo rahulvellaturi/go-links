@@ -10,13 +10,15 @@ Full-stack: a React 19 + TypeScript frontend and an Express + SQLite backend.
 
 - Frontend: React 19 + TypeScript (Vite)
 - Backend: Express + TypeScript
-- Database: SQLite via better-sqlite3 (real persistence)
+- Database: SQLite via Node's built-in `node:sqlite` (no native build; needs Node 22.13+)
 - Validation: shared rules on client and server
 - Tests: Vitest
 
 ## Run it
 
-Install once:
+Requires Node 22.13 or newer (for the built-in `node:sqlite` module).
+
+Install once — no compiler or Python needed, since there are no native dependencies:
 
 ```bash
 npm install
@@ -77,8 +79,9 @@ curl -i localhost:3000/go/does-not-exist  # 404
 
 - **Redirect namespaced under `/go/`** rather than a root catch-all, so it can never
   shadow API routes or static assets — safer than matching every unknown path.
-- **better-sqlite3** (synchronous) keeps the data layer simple: no pool, no async
-  plumbing, and it runs on Node 18+. Postgres would be the swap for multi-instance.
+- **`node:sqlite`** (Node's built-in SQLite) keeps the data layer simple and avoids a
+  native build step entirely — no node-gyp, no compiler. Postgres would be the swap for
+  a multi-instance deployment.
 - **Validation duplicated on both sides** — instant client feedback, with the server
   as the source of truth (it still rejects a bad or duplicate request directly).
 - **No auth, no edit/delete** — kept scope tight; both are natural next steps.

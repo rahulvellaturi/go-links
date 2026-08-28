@@ -1,11 +1,12 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 /**
- * SQLite persistence for shortcuts. Uses better-sqlite3 (synchronous, no
- * connection pool needed) with prepared statements. The DB file lives at the
- * project root and is created on first run.
+ * SQLite persistence for shortcuts, using Node's built-in `node:sqlite` module
+ * (no native build, no external dependency — needs Node 22.13+). Synchronous
+ * API with prepared statements. The DB file is created at the project root on
+ * first run.
  */
 
 export interface Link {
@@ -19,16 +20,16 @@ export interface Link {
 
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'go-links.db');
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
+const db = new DatabaseSync(DB_PATH);
+db.exec('PRAGMA journal_mode = WAL;');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS links (
-    id             TEXT PRIMARY KEY,
-    shortname      TEXT NOT NULL UNIQUE,
-    url            TEXT NOT NULL,
-    created_at     TEXT NOT NULL,
-    visit_count    INTEGER NOT NULL DEFAULT 0,
+    id              TEXT PRIMARY KEY,
+    shortname       TEXT NOT NULL UNIQUE,
+    url             TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    visit_count     INTEGER NOT NULL DEFAULT 0,
     last_visited_at TEXT
   );
 `);
@@ -63,8 +64,9 @@ const statements = {
   byName: db.prepare('SELECT * FROM links WHERE shortname = ?'),
   insert: db.prepare(
     `INSERT INTO links (id, shortname, url, created_at, visit_count, last_visited_at)
-     VALUES (@id, @shortname, @url, @createdAt, 0, NULL)`,
+     VALUES (?, ?, ?, ?, 0, NULL)`,
   ),
+  count: db.prepare('SELECT COUNT(*) AS n FROM links'),
   recordVisit: db.prepare(
     `UPDATE links
      SET visit_count = visit_count + 1, last_visited_at = ?
@@ -72,24 +74,12 @@ const statements = {
   ),
 };
 
-/** Insert a few example links the first time the app runs, so the list isn't empty. */
-function seedIfEmpty(): void {
-  const count = (db.prepare('SELECT COUNT(*) AS n FROM links').get() as { n: number }).n;
-  if (count > 0) return;
-  const seeds: Array<[string, string]> = [
-    ['design-system', 'https://example.com/design-system'],
-    ['oncall', 'https://example.com/oncall-schedule'],
-    ['payroll', 'https://example.com/hr/payroll'],
-  ];
-  for (const [shortname, url] of seeds) createLink(shortname, url);
-}
-
 export function getAllLinks(): Link[] {
-  return (statements.all.all() as Row[]).map(toLink);
+  return (statements.all.all() as unknown as Row[]).map(toLink);
 }
 
 export function getLink(shortname: string): Link | undefined {
-  const row = statements.byName.get(normalise(shortname)) as Row | undefined;
+  const row = statements.byName.get(normalise(shortname)) as unknown as Row | undefined;
   return row ? toLink(row) : undefined;
 }
 
@@ -102,12 +92,24 @@ export function createLink(shortname: string, url: string): Link {
     visitCount: 0,
     lastVisitedAt: null,
   };
-  statements.insert.run(link);
+  statements.insert.run(link.id, link.shortname, link.url, link.createdAt);
   return link;
 }
 
 export function recordVisit(shortname: string): void {
   statements.recordVisit.run(new Date().toISOString(), normalise(shortname));
+}
+
+/** Insert a few example links the first time the app runs, so the list isn't empty. */
+function seedIfEmpty(): void {
+  const n = (statements.count.get() as unknown as { n: number }).n;
+  if (n > 0) return;
+  const seeds: Array<[string, string]> = [
+    ['design-system', 'https://example.com/design-system'],
+    ['oncall', 'https://example.com/oncall-schedule'],
+    ['payroll', 'https://example.com/hr/payroll'],
+  ];
+  for (const [shortname, url] of seeds) createLink(shortname, url);
 }
 
 seedIfEmpty();
