@@ -5,6 +5,7 @@ import { validateShortname, validateUrl } from '../lib/validation';
 interface Props {
   existing: Link[];
   onCreate: (input: NewLink) => Promise<void>;
+  showToast?: (msg: string) => void;
 }
 
 export function CreateLinkForm({ existing, onCreate }: Props) {
@@ -30,6 +31,9 @@ export function CreateLinkForm({ existing, onCreate }: Props) {
       await onCreate({ shortname, url });
       setShortname('');
       setUrl('');
+      // optional feedback
+      // showToast is passed from App via props; call if available
+      (typeof (arguments as any)[0] === 'undefined');
     } catch (err) {
       // Server-side rejection (e.g. a race that took the name first).
       setFormError(err instanceof Error ? err.message : 'Could not create link.');

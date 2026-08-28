@@ -4,6 +4,7 @@ export interface Link {
   shortname: string;
   url: string;
   createdAt: string;
+  visits: number;
 }
 
 /** The shape the user submits when creating a link. */
