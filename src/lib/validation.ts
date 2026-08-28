@@ -1,34 +1,18 @@
 import type { Link } from '../types/link';
 
-export const SHORTNAME_MAX_LENGTH = 40;
-
-/** Shortnames are lowercase letters, numbers and hyphens: what sits after `go/`. */
 const SHORTNAME_PATTERN = /^[a-z0-9-]+$/;
-
-const RESERVED = new Set(['api', 'go', 'assets', 'favicon.ico', 'index.html']);
 
 export interface ValidationResult {
   ok: boolean;
   error?: string;
 }
 
-/**
- * Validate a shortname against the format rules and existing links. Mirrors the
- * server's rules so the user gets instant feedback; the server stays the source
- * of truth.
- */
+/** Validate a shortname client-side for instant feedback; the server re-checks. */
 export function validateShortname(raw: string, existing: Link[]): ValidationResult {
   const name = raw.trim().toLowerCase();
-
   if (name.length === 0) return { ok: false, error: 'Enter a shortname.' };
-  if (name.length > SHORTNAME_MAX_LENGTH) {
-    return { ok: false, error: `Keep it under ${SHORTNAME_MAX_LENGTH} characters.` };
-  }
   if (!SHORTNAME_PATTERN.test(name)) {
     return { ok: false, error: 'Use only lowercase letters, numbers and hyphens.' };
-  }
-  if (RESERVED.has(name)) {
-    return { ok: false, error: `"${name}" is reserved.` };
   }
   if (existing.some((l) => l.shortname === name)) {
     return { ok: false, error: `go/${name} is already taken.` };
@@ -38,20 +22,14 @@ export function validateShortname(raw: string, existing: Link[]): ValidationResu
 
 export function validateUrl(raw: string): ValidationResult {
   const value = raw.trim();
-
   if (value.length === 0) return { ok: false, error: 'Enter a destination URL.' };
-  let parsed: URL;
   try {
-    parsed = new URL(value);
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { ok: false, error: 'URL must start with http:// or https://' };
+    }
   } catch {
     return { ok: false, error: 'Enter a valid URL, including https://' };
   }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { ok: false, error: 'URL must start with http:// or https://' };
-  }
   return { ok: true };
-}
-
-export function normaliseShortname(raw: string): string {
-  return raw.trim().toLowerCase();
 }
