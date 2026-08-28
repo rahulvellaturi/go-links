@@ -1,0 +1,20 @@
+[
+  {
+    "id": "seed-1",
+    "alias": "design-system",
+    "targetUrl": "https://example.com/design-system",
+    "createdAt": "2025-01-10T09:00:00.000Z"
+  },
+  {
+    "id": "seed-2",
+    "alias": "oncall",
+    "targetUrl": "https://example.com/oncall-schedule",
+    "createdAt": "2025-01-11T14:30:00.000Z"
+  },
+  {
+    "id": "seed-3",
+    "alias": "payroll",
+    "targetUrl": "https://example.com/hr/payroll",
+    "createdAt": "2025-01-12T08:15:00.000Z"
+  }
+]
