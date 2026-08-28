@@ -15,15 +15,15 @@ The API runs on port 3000 and the frontend on 5173. Open http://localhost:5173. 
 
 ## API
 
-- `GET /api/links` — list all shortcuts.
-- `POST /api/links` — create one (validated; duplicates return 409).
-- `GET /go/:shortname` — redirect to the destination (404 if unknown).
+- `GET /api/links` - list all shortcuts.
+- `POST /api/links` - create one (validated; duplicates return 409).
+- `GET /go/:shortname` - redirect to the destination (404 if unknown).
 
 ## Structure
 
-- `server/src/db.ts` — SQLite schema, seed, and queries.
-- `server/src/index.ts` — Express app: the three routes and validation.
-- `src/` — React app: create form, list, and the API client.
+- `server/src/db.ts` - SQLite schema, seed, and queries.
+- `server/src/index.ts` - Express app: the three routes and validation.
+- `src/` - React app: create form, list, and the API client.
 
 ## Assumptions
 
