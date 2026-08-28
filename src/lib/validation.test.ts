@@ -1,48 +1,52 @@
 import { describe, it, expect } from 'vitest';
-import { validateAlias, validateTargetUrl, ALIAS_MAX_LENGTH } from './validation';
-import type { Shortcut } from '../types/shortcut';
+import { validateShortname, validateUrl, SHORTNAME_MAX_LENGTH } from './validation';
+import type { Link } from '../types/link';
 
-const existing: Shortcut[] = [
-  { id: '1', alias: 'payroll', targetUrl: 'https://example.com', createdAt: '' },
+const existing: Link[] = [
+  { id: '1', shortname: 'payroll', url: 'https://example.com', createdAt: '', visitCount: 0, lastVisitedAt: null },
 ];
 
-describe('validateAlias', () => {
-  it('rejects an empty alias', () => {
-    expect(validateAlias('   ', existing).ok).toBe(false);
+describe('validateShortname', () => {
+  it('rejects an empty shortname', () => {
+    expect(validateShortname('   ', existing).ok).toBe(false);
   });
 
   it('rejects illegal characters', () => {
-    expect(validateAlias('my link', existing).ok).toBe(false);
-    expect(validateAlias('go/oncall', existing).ok).toBe(false);
+    expect(validateShortname('my link', existing).ok).toBe(false);
+    expect(validateShortname('go/oncall', existing).ok).toBe(false);
   });
 
-  it('rejects an alias that is already taken (case-insensitive)', () => {
-    expect(validateAlias('PAYROLL', existing).ok).toBe(false);
+  it('rejects a reserved word', () => {
+    expect(validateShortname('api', existing).ok).toBe(false);
   });
 
-  it('rejects an alias over the length limit', () => {
-    expect(validateAlias('a'.repeat(ALIAS_MAX_LENGTH + 1), existing).ok).toBe(false);
+  it('rejects a duplicate (case-insensitive)', () => {
+    expect(validateShortname('PAYROLL', existing).ok).toBe(false);
   });
 
-  it('accepts a clean, unique alias', () => {
-    expect(validateAlias('design-system', existing).ok).toBe(true);
+  it('rejects an over-length shortname', () => {
+    expect(validateShortname('a'.repeat(SHORTNAME_MAX_LENGTH + 1), existing).ok).toBe(false);
+  });
+
+  it('accepts a clean, unique shortname', () => {
+    expect(validateShortname('design-system', existing).ok).toBe(true);
   });
 });
 
-describe('validateTargetUrl', () => {
+describe('validateUrl', () => {
   it('rejects an empty URL', () => {
-    expect(validateTargetUrl('').ok).toBe(false);
+    expect(validateUrl('').ok).toBe(false);
   });
 
   it('rejects a non-http protocol', () => {
-    expect(validateTargetUrl('ftp://example.com').ok).toBe(false);
+    expect(validateUrl('ftp://example.com').ok).toBe(false);
   });
 
   it('rejects a malformed URL', () => {
-    expect(validateTargetUrl('not a url').ok).toBe(false);
+    expect(validateUrl('not a url').ok).toBe(false);
   });
 
   it('accepts a valid https URL', () => {
-    expect(validateTargetUrl('https://intranet/hr/payroll').ok).toBe(true);
+    expect(validateUrl('https://intranet/hr/payroll').ok).toBe(true);
   });
 });

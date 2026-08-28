@@ -1,70 +1,93 @@
 # Go Links
 
-A small internal URL shortcut service. Create memorable aliases like `go/payroll`
-that redirect to long internal URLs, browse existing shortcuts, and visit an alias
-to be redirected.
+An internal URL shortcut service. Create memorable shortnames like `go/payroll`
+that redirect to long internal URLs, search the list, and visit `go/<name>` to be
+redirected — with basic visit tracking on each link.
 
-Built as a first iteration — the kind of thing a team would keep developing.
+Full-stack: a React 19 + TypeScript frontend and an Express + SQLite backend.
 
 ## Stack
 
-- React 19 + TypeScript
-- Vite (dev server and build)
-- Vitest (unit tests)
-- No backend, no UI framework, no router — see tradeoffs below.
+- Frontend: React 19 + TypeScript (Vite)
+- Backend: Express + TypeScript
+- Database: SQLite via better-sqlite3 (real persistence)
+- Validation: shared rules on client and server
+- Tests: Vitest
 
 ## Run it
 
+Install once:
+
 ```bash
 npm install
-npm run dev      # start the dev server (printed URL, usually http://localhost:5173)
 ```
 
-Other scripts:
+Development (frontend + API together, with hot reload):
 
 ```bash
-npm run build    # type-check and produce a production build
-npm test         # run the unit tests once
+npm run dev
+```
+
+Vite serves the app (usually http://localhost:5173) and proxies `/api` and `/go`
+to the Express API on port 3000.
+
+Production-style single origin (Express serves the built app + API + redirects):
+
+```bash
+npm run build
+npm start        # http://localhost:3000
+```
+
+Other scripts: `npm test` (unit tests), `npm run typecheck:server` (server types).
+
+## API
+
+- `GET /api/links` — list all shortcuts, newest first.
+- `POST /api/links` — create one. Validates, blocks duplicates (409) and reserved names.
+- `GET /go/:shortname` — resolve, record the visit, and 302-redirect to the destination.
+
+Quick smoke test:
+
+```bash
+curl -X POST localhost:3000/api/links -H "Content-Type: application/json" \
+  -d '{"shortname":"design-system","url":"https://figma.com/file/ds"}'
+curl -i localhost:3000/go/design-system   # 302 with a Location header
+curl -i localhost:3000/go/does-not-exist  # 404
 ```
 
 ## How it works
 
-Three layers:
-
-- **Data** — `public/shortcuts.json` stands in for a backend. On load the app does a
-  real `fetch` over HTTP (`src/services/shortcutsApi.ts`), so swapping in a live API
-  later touches only that one file.
-- **State** — `src/hooks/useShortcuts.ts` owns the list plus `loading` and `error`
-  state, and appends newly created shortcuts.
-- **UI** — a create form with validation, a list with loading / error / empty states,
-  and a redirect view resolved from the URL hash.
-
-Visiting `#/go/:alias` resolves the alias and redirects to its destination.
+- Data — `server/src/db.ts` owns the SQLite schema and prepared queries, and seeds
+  a few example links on first run.
+- API — `server/src/routes.ts` handles list, create, and redirect; validation lives
+  in `server/src/validation.ts`; request-id logging is middleware.
+- Frontend — `src/services/linksApi.ts` is the only place that calls the API. A hook
+  (`src/hooks/useLinks.ts`) owns loading/error state; components render the form,
+  the searchable list, and per-link visit counts.
 
 ## Assumptions
 
-- Aliases are lowercase letters, numbers and hyphens — what reads cleanly after `go/`.
-- Aliases are unique and case-insensitive (`Payroll` and `payroll` are the same link).
-- Destinations must be absolute `http(s)` URLs so the redirect actually resolves.
-- Single-user, single-tenant. No auth, no accounts.
+- Shortnames are lowercase letters, numbers and hyphens, and are unique and
+  case-insensitive (`Payroll` and `payroll` are the same link).
+- Destinations must be absolute `http(s)` URLs so the redirect resolves.
+- Names that would collide with app routes (`api`, `go`, `assets`, …) are reserved.
+- Single-tenant. No auth or accounts.
 
 ## Tradeoffs I chose deliberately
 
-- **In-memory writes.** Created shortcuts live in React state and reset on refresh.
-  Persistence is the single most important next step, but it needs a real backend,
-  which is out of scope for a time-boxed first iteration.
-- **Static JSON as the API.** Real `fetch`, real loading/error handling, zero server
-  to run. It demonstrates the integration boundary without the setup cost.
-- **Hash routing, no library.** One redirect route doesn't justify React Router. The
-  routing lives behind a hook, so adding a real router later is a contained change.
-- **Validation as pure functions.** `src/lib/validation.ts` has no React in it, so the
-  rules are unit-tested directly and reused by the form.
+- **Redirect namespaced under `/go/`** rather than a root catch-all, so it can never
+  shadow API routes or static assets — safer than matching every unknown path.
+- **better-sqlite3** (synchronous) keeps the data layer simple: no pool, no async
+  plumbing, and it runs on Node 18+. Postgres would be the swap for multi-instance.
+- **Validation duplicated on both sides** — instant client feedback, with the server
+  as the source of truth (it still rejects a bad or duplicate request directly).
+- **No auth, no edit/delete** — kept scope tight; both are natural next steps.
 
 ## If I had another day
 
-- Persist shortcuts with a small backend (`POST /shortcuts`, `GET /go/:alias`) so links
-  survive a refresh and can be shared.
-- Add click tracking so teams can see which links are actually used.
-- Edit and delete existing shortcuts.
-- Component/interaction tests (React Testing Library) on top of the current unit tests.
-- Handle alias collisions from concurrent users at the API layer.
+- Auth and per-user ownership of links.
+- Edit and delete, plus disabling a link without removing it.
+- A "most visited" view built on the visit counts already tracked.
+- Handle the create race (two users, same name) with the DB unique constraint surfaced
+  as a clean 409 instead of a thrown error.
+- Integration tests (supertest) over the routes, on top of the current unit tests.

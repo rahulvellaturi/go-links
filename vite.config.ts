@@ -1,7 +1,13 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
+// In dev, Vite serves the frontend and proxies API + redirect routes to Express.
 export default defineConfig({
   plugins: [react()],
-})
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/go': 'http://localhost:3000',
+    },
+  },
+});
