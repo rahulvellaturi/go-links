@@ -13,32 +13,33 @@ npm run dev
 
 The API runs on port 3000 and the frontend on 5173. Open http://localhost:5173. The database file is created and seeded with a few example links on the first run.
 
-## API
+## How it's built
 
-- `GET /api/links` - list all shortcuts.
-- `POST /api/links` - create one (validated; duplicates return 409).
-- `GET /go/:shortname` - redirect to the destination (404 if unknown).
+Three parts, each with one job:
 
-## Structure
+- Frontend (React + TypeScript) - the form and the list. Talks to the backend over HTTP; never touches the database.
+- Backend (Express) - three endpoints: list links, create a link, and the redirect at `/go/:name`. It validates every create.
+- Database (SQLite) - stores the links, reached only through the backend.
 
-- `server/src/db.ts` - SQLite schema, seed, and queries.
-- `server/src/index.ts` - Express app: the three routes and validation.
-- `src/` - React app: create form, list, and the API client.
+Links persist in SQLite, so they survive a restart. I validate input on the form (quick feedback) and again on the server (the real check), and duplicate names are rejected.
 
-## Assumptions
+## Project structure
 
-- Shortnames are lowercase letters, numbers and hyphens, unique and case-insensitive.
-- Destinations must be absolute `http(s)` URLs.
-- Single-user, no auth.
+```
+server/
+  src/
+    db.ts        SQLite setup, seed, and the queries
+    index.ts     Express app: the three routes and validation
+src/
+  types/         the Link type
+  lib/           client-side validation
+  services/      the API client (fetch calls)
+  hooks/         list + loading/error state
+  components/    the form and the list
+  App.tsx        puts it together
+vite.config.ts   dev server + proxy to the API
+```
 
-## Tradeoffs (scoped to the time box)
+## Can it scale?
 
-- **Writes go through the API to SQLite**, so links persist across restarts.
-- **Validation on both sides** — instant client feedback, server as source of truth.
-- **Redirect namespaced under `/go/`** so it never shadows the API or assets.
-
-## Next steps
-
-- Unit and integration tests.
-- Visit tracking and a "most visited" view.
-- Edit/delete, and auth for per-user links.
+For one team, yes — it's simple and fast. It's built for a single instance, since SQLite is a file next to the app. To go company-wide, the main change is moving to a networked database like Postgres so multiple copies of the app share the data; after that, an index on the short name, pagination, and login.
