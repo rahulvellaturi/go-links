@@ -1,54 +1,45 @@
 # Go Links
 
-An internal URL shortcut service. Create memorable shortnames like `go/payroll`
-that redirect to long internal URLs, browse the list, and visit `go/<name>` to be
-redirected.
+A small internal URL shortener I built for the take-home. You make a short name like `go/payroll`, and visiting it redirects to the full URL. You can also see all the links in one list.
 
-React 19 + TypeScript frontend, Express + SQLite backend.
+## Running it
 
-## Requirements
+Needs Node 22.13 or newer (I use the SQLite built into Node, so there's nothing to install for the database).
 
-Node 22.13+ (uses Node's built-in `node:sqlite` — no native build, no compiler).
-
-## Run
-
-```bash
+```
 npm install
 npm run dev
 ```
 
-`npm run dev` starts the API (port 3000) and the frontend (port 5173) together.
-Vite proxies `/api` and `/go` to the API. Open http://localhost:5173.
+The API runs on port 3000 and the frontend on 5173. Open http://localhost:5173. The database file is created and seeded with a few example links on the first run.
 
-The SQLite file (`go-links.db`) and its table are created automatically on first
-run, seeded with a few example links.
+## How it's built
 
-## API
+Three parts, each with one job:
 
-- `GET /api/links` — list all shortcuts.
-- `POST /api/links` — create one (validated; duplicates return 409).
-- `GET /go/:shortname` — redirect to the destination (404 if unknown).
+- Frontend (React + TypeScript) — the form and the list. Talks to the backend over HTTP; never touches the database.
+- Backend (Express) — three endpoints: list links, create a link, and the redirect at `/go/:name`. It validates every create.
+- Database (SQLite) — stores the links, reached only through the backend.
 
-## Structure
+Links persist in SQLite, so they survive a restart. I validate input on the form (quick feedback) and again on the server (the real check), and duplicate names are rejected.
 
-- `server/src/db.ts` — SQLite schema, seed, and queries.
-- `server/src/index.ts` — Express app: the three routes and validation.
-- `src/` — React app: create form, list, and the API client.
+## Project structure
 
-## Assumptions
+```
+server/
+  src/
+    db.ts        SQLite setup, seed, and the queries
+    index.ts     Express app: the three routes and validation
+src/
+  types/         the Link type
+  lib/           client-side validation
+  services/      the API client (fetch calls)
+  hooks/         list + loading/error state
+  components/    the form and the list
+  App.tsx        puts it together
+vite.config.ts   dev server + proxy to the API
+```
 
-- Shortnames are lowercase letters, numbers and hyphens, unique and case-insensitive.
-- Destinations must be absolute `http(s)` URLs.
-- Single-user, no auth.
+## Can it scale?
 
-## Tradeoffs (scoped to the time box)
-
-- **Writes go through the API to SQLite**, so links persist across restarts.
-- **Validation on both sides** — instant client feedback, server as source of truth.
-- **Redirect namespaced under `/go/`** so it never shadows the API or assets.
-
-## Next steps
-
-- Unit and integration tests.
-- Visit tracking and a "most visited" view.
-- Edit/delete, and auth for per-user links.
+For one team, yes — it's simple and fast. It's built for a single instance, since SQLite is a file next to the app. To go company-wide, the main change is moving to a networked database like Postgres so multiple copies of the app share the data; after that, an index on the short name, pagination, and login.
