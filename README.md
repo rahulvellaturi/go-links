@@ -1,27 +1,17 @@
 # Go Links
 
-An internal URL shortcut service. Create memorable shortnames like `go/payroll`
-that redirect to long internal URLs, browse the list, and visit `go/<name>` to be
-redirected.
+A small internal URL shortener I built for the take-home. You make a short name like `go/payroll`, and visiting it redirects to the full URL. You can also see all the links in one list.
 
-React 19 + TypeScript frontend, Express + SQLite backend.
+## Running it
 
-## Requirements
+Needs Node 22.13 or newer (I use the SQLite built into Node, so there's nothing to install for the database).
 
-Node 22.13+ (uses Node's built-in `node:sqlite` — no native build, no compiler).
-
-## Run
-
-```bash
+```
 npm install
 npm run dev
 ```
 
-`npm run dev` starts the API (port 3000) and the frontend (port 5173) together.
-Vite proxies `/api` and `/go` to the API. Open http://localhost:5173.
-
-The SQLite file (`go-links.db`) and its table are created automatically on first
-run, seeded with a few example links.
+The API runs on port 3000 and the frontend on 5173. Open http://localhost:5173. The database file is created and seeded with a few example links on the first run.
 
 ## API
 
