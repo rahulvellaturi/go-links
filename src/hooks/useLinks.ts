@@ -32,6 +32,34 @@ export function useLinks(): LinksState {
 
   useEffect(load, [load]);
 
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        load();
+      }
+    };
+
+    // Always reload when the page is shown (e.g. when returning via back/forward),
+    // because some browsers restore the page from bfcache without firing focus
+    // or visibilitychange in a way we can rely on. This ensures visits update.
+    const handlePageShow = () => load();
+    const handleVisibility = () => refreshIfVisible();
+    const handleFocus = () => load();
+    const handlePopState = () => load();
+
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [load]);
+
   /** Create a link, then refresh so the new row (and its counts) show up. */
   const createLink = useCallback(async (input: NewLink) => {
     const created = await createLinkApi(input);

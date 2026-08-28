@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllLinks, getLink, createLink } from './db';
+import { getAllLinks, getLink, createLink, incrementVisits } from './db';
 
 const app = express();
 app.use(express.json());
@@ -42,7 +42,11 @@ app.post('/api/links', (req, res) => {
 app.get('/go/:shortname', (req, res) => {
   const link = getLink(req.params.shortname);
   if (!link) return res.status(404).send(`No shortcut found for go/${req.params.shortname}.`);
-  res.redirect(302, link.url);
+
+  const updated = incrementVisits(req.params.shortname);
+  if (!updated) return res.status(404).send(`No shortcut found for go/${req.params.shortname}.`);
+
+  res.redirect(302, updated.url);
 });
 
 const PORT = Number(process.env.PORT) || 3000;
